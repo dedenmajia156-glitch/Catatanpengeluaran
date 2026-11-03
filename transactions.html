@@ -158,13 +158,19 @@
   async function loadData() {
     document.getElementById('trxWrap').innerHTML = '<div class="loading">Memuat...</div>';
     const { start, end } = getMonthRange(curMonth, curYear);
-    const { data } = await supabase
-      .from('kk_transactions')
-      .select('*, kk_categories(name,icon,type)')
-      .gte('date', start).lte('date', end)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
-    allTrx = data || [];
+    try {
+      const { data, error } = await db
+        .from('kk_transactions')
+        .select('*, kk_categories(name,icon,type)')
+        .gte('date', start).lte('date', end)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      allTrx = data || [];
+    } catch(e) {
+      document.getElementById('trxWrap').innerHTML = `<div class="empty-state"><div class="ei">⚠️</div><p>Gagal memuat: ${e.message}</p></div>`;
+      return;
+    }
     renderTable();
   }
 

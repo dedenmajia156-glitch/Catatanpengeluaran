@@ -203,7 +203,7 @@
 
   async function loadData() {
     const { start, end } = getMonthRange(curMonth, curYear);
-    const { data } = await supabase
+    const { data } = await db
       .from('kk_transactions')
       .select('*, kk_categories(name, icon, type)')
       .gte('date', start).lte('date', end)

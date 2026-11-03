@@ -30,7 +30,7 @@ function initNav(activeId) {
   if (sidebarMount) {
     sidebarMount.outerHTML = `
       <aside class="sidebar">
-        <div class="sidebar-logo">${ICONS.logo}</div>
+        <div class="sidebar-logo">KK</div>
         <nav class="sidebar-nav">
           ${NAV_ITEMS.map(item => `
             <a href="${item.href}"

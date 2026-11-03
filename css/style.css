@@ -59,9 +59,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
   margin-bottom: 32px;
   color: white;
+  flex-shrink: 0;
 }
 
 .sidebar-nav {

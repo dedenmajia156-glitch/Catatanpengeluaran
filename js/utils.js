@@ -37,40 +37,17 @@ function todayStr() {
   return new Date().toISOString().split('T')[0];
 }
 
+// Panggil via Vercel serverless function — API key aman di server
 async function extractFromQRIS(imageBase64, mimeType) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/extract-qris', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': CLAUDE_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 300,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mimeType, data: imageBase64 }
-          },
-          {
-            type: 'text',
-            text: 'Ini screenshot bukti bayar QRIS / transfer bank / dompet digital (GoPay, OVO, DANA, ShopeePay, dll). Ekstrak info berikut dalam format JSON: {"nominal": number, "merchant": "string atau null", "tanggal": "YYYY-MM-DD atau null", "keterangan": "string atau null"}. Nominal dalam angka bulat tanpa titik/koma. Tanggal format YYYY-MM-DD. Jika tidak bisa baca, isi null. Balas JSON saja tanpa penjelasan.'
-          }
-        ]
-      }]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64, mimeType })
   });
 
-  if (!res.ok) throw new Error('Gagal koneksi ke AI');
   const data = await res.json();
-  const text = data.content[0].text;
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Tidak dapat membaca data dari gambar');
-  return JSON.parse(match[0]);
+  if (!res.ok || data.error) throw new Error(data.error || 'Gagal koneksi ke server');
+  return data;
 }
 
 function fileToBase64(file) {
