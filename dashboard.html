@@ -35,22 +35,22 @@
       <div class="dash-col">
         <!-- Balance Card -->
         <div class="balance-card">
-          <div class="bc-label">💜 Saldo Bersih</div>
+          <div class="bc-label">Saldo Bersih</div>
           <div class="bc-title">Bulan Ini</div>
           <div class="bc-amount" id="saldoCard">Rp 0</div>
           <div class="bc-meta">
             <span class="bc-tag">Keuangan Keluarga</span>
-            <span style="font-size:20px;">🏡</span>
+            <span style="font-size:13px;opacity:.6">KK</span>
           </div>
         </div>
         <!-- Income Mini -->
         <div class="mini-card">
-          <div class="mc-label">💚 Total Pemasukan</div>
+          <div class="mc-label"><span class="lbl-dot income"></span>Total Pemasukan</div>
           <div class="mc-value income" id="totalIncome">Rp 0</div>
         </div>
         <!-- Expense Mini -->
         <div class="mini-card">
-          <div class="mc-label">❤️ Total Pengeluaran</div>
+          <div class="mc-label"><span class="lbl-dot expense"></span>Total Pengeluaran</div>
           <div class="mc-value expense" id="totalExpense">Rp 0</div>
         </div>
       </div>
@@ -74,24 +74,30 @@
       <div class="dash-col">
         <!-- Summary Card -->
         <div class="summary-card">
-          <div class="sc-label">📊 Perbandingan Bulan Ini</div>
+          <div class="sc-label">Perbandingan Bulan Ini</div>
           <div class="sc-amount" id="saldoRight">Rp 0</div>
           <div class="sc-chart-wrap">
             <canvas id="miniLine"></canvas>
           </div>
           <div class="action-row">
-            <button class="btn-action btn-income-action" onclick="openModal('income')">💚 Catat Masuk</button>
-            <button class="btn-action btn-expense-action" onclick="openModal('expense')">❤️ Catat Keluar</button>
+            <button class="btn-action btn-income-action" onclick="openModal('income')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              Catat Masuk
+            </button>
+            <button class="btn-action btn-expense-action" onclick="openModal('expense')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+              Catat Keluar
+            </button>
           </div>
         </div>
         <!-- Trx Count -->
         <div class="mini-card">
-          <div class="mc-label">📝 Jumlah Transaksi Bulan Ini</div>
+          <div class="mc-label"><span class="lbl-dot neutral"></span>Jumlah Transaksi Bulan Ini</div>
           <div class="mc-value neutral" id="trxCount" style="color:var(--text);">0 transaksi</div>
         </div>
         <!-- Top Expense -->
         <div class="mini-card">
-          <div class="mc-label">🔝 Pengeluaran Terbesar</div>
+          <div class="mc-label"><span class="lbl-dot expense"></span>Pengeluaran Terbesar</div>
           <div class="mc-value expense" id="topExpense" style="font-size:16px;">—</div>
         </div>
       </div>
@@ -123,8 +129,8 @@
     <div class="modal-title">Tambah Transaksi</div>
     <div class="modal-body">
       <div class="type-toggle">
-        <button class="type-btn active-income" id="btnIncome" onclick="setType('income')">💚 Pemasukan</button>
-        <button class="type-btn" id="btnExpense" onclick="setType('expense')">❤️ Pengeluaran</button>
+        <button class="type-btn active-income" id="btnIncome" onclick="setType('income')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>Pemasukan</button>
+        <button class="type-btn" id="btnExpense" onclick="setType('expense')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>Pengeluaran</button>
       </div>
       <div class="qris-note">ℹ️ <strong>Upload SS QRIS/Transfer</strong> untuk auto-isi nominal, merchant & tanggal. AI hanya membaca gambar, tidak menyimpannya.</div>
       <input type="file" id="qrisFile" accept="image/*" style="display:none" onchange="handleQRIS(this)">
@@ -263,7 +269,7 @@
         <tbody>
           ${list.map(t => {
             const cat = t.kk_categories;
-            const icon = cat?.icon || (t.type === 'income' ? '💵' : '💸');
+            const icon = cat?.icon || (t.type === 'income' ? '↑' : '↓');
             const name = t.description || cat?.name || (t.type === 'income' ? 'Pemasukan' : 'Pengeluaran');
             const catName = cat?.name || '';
             const d = new Date(t.created_at);

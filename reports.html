@@ -14,7 +14,7 @@
 
   <main class="main-content">
     <div class="page-header">
-      <h1>📊 <span>Laporan</span></h1>
+      <h1><span>Laporan</span></h1>
       <div class="page-header-right">
         <div class="month-selector">
           <button class="month-btn" onclick="changeMonth(-1)">‹</button>
@@ -27,19 +27,19 @@
     <!-- Summary Stats -->
     <div class="report-grid">
       <div class="report-stat">
-        <div class="rs-label">💚 Total Pemasukan</div>
+        <div class="rs-label"><span class="lbl-dot income"></span>Total Pemasukan</div>
         <div class="rs-value income" id="rIncome">Rp 0</div>
       </div>
       <div class="report-stat">
-        <div class="rs-label">❤️ Total Pengeluaran</div>
+        <div class="rs-label"><span class="lbl-dot expense"></span>Total Pengeluaran</div>
         <div class="rs-value expense" id="rExpense">Rp 0</div>
       </div>
       <div class="report-stat">
-        <div class="rs-label">💜 Saldo Bersih</div>
+        <div class="rs-label"><span class="lbl-dot saldo"></span>Saldo Bersih</div>
         <div class="rs-value neutral" id="rSaldo">Rp 0</div>
       </div>
       <div class="report-stat">
-        <div class="rs-label">📝 Total Transaksi</div>
+        <div class="rs-label"><span class="lbl-dot neutral"></span>Total Transaksi</div>
         <div class="rs-value neutral" id="rCount">0</div>
       </div>
     </div>
@@ -145,7 +145,7 @@
     const inc = {}, exp = {};
     list.forEach(t => {
       const n = t.kk_categories?.name || 'Lain-lain';
-      const i = t.kk_categories?.icon || (t.type==='income'?'💵':'💸');
+      const i = t.kk_categories?.icon || (t.type==='income'?'↑':'↓');
       if (t.type==='income') { if(!inc[n]) inc[n]={icon:i,total:0}; inc[n].total+=t.amount; }
       else { if(!exp[n]) exp[n]={icon:i,total:0}; exp[n].total+=t.amount; }
     });

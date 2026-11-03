@@ -142,6 +142,19 @@ body {
   cursor: pointer;
 }
 .nav-item .nav-icon { font-size: 20px; display: flex; align-items: center; justify-content: center; }
+
+/* ── Label dots ── */
+.lbl-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.lbl-dot.income { background: var(--green); }
+.lbl-dot.expense { background: var(--red); }
+.lbl-dot.saldo { background: #6366f1; }
+.lbl-dot.neutral { background: var(--text-muted); }
 .nav-item.active { color: var(--green); }
 
 /* ══════════════════════════════════
