@@ -8,4 +8,8 @@ const CLAUDE_API_KEY = 'sk-ant-usr-1R61LheclwVGXQCvINDXTSo6aKLE7pelWxnC4uy28Pm1Y
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const APP_PASSWORD = 'zayyan2024'; // Ganti password sesuai keinginan
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inisialisasi Supabase (hanya kalau library sudah ter-load)
+let supabase;
+if (typeof window !== 'undefined' && window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
