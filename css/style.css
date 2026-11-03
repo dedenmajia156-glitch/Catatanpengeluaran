@@ -138,7 +138,7 @@ body {
   border: none;
   cursor: pointer;
 }
-.nav-item .nav-icon { font-size: 20px; }
+.nav-item .nav-icon { font-size: 20px; display: flex; align-items: center; justify-content: center; }
 .nav-item.active { color: var(--green); }
 
 /* ══════════════════════════════════

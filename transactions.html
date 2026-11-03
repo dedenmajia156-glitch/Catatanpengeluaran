@@ -10,18 +10,7 @@
 <div class="app-layout">
 
   <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">🏠</div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="sidebar-item" title="Dashboard">🏠</a>
-      <a href="transactions.html" class="sidebar-item active" title="Transaksi">📋</a>
-      <a href="reports.html" class="sidebar-item" title="Laporan">📊</a>
-      <a href="categories.html" class="sidebar-item" title="Kategori">🏷️</a>
-    </nav>
-    <div class="sidebar-bottom">
-      <button class="sidebar-item" onclick="logout()" title="Keluar">🚪</button>
-    </div>
-  </aside>
+  <div id="sidebar-mount"></div>
 
   <!-- Main -->
   <main class="main-content">
@@ -58,15 +47,7 @@
 </div>
 
 <!-- Bottom Nav -->
-<nav class="bottom-nav">
-  <div class="bottom-nav-inner">
-    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Beranda</a>
-    <a href="transactions.html" class="nav-item active"><span class="nav-icon">📋</span>Transaksi</a>
-    <a href="reports.html" class="nav-item"><span class="nav-icon">📊</span>Laporan</a>
-    <a href="categories.html" class="nav-item"><span class="nav-icon">🏷️</span>Kategori</a>
-    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</button>
-  </div>
-</nav>
+<div id="bnav-mount"></div>
 
 <!-- FAB mobile -->
 <button style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;background:var(--green);color:white;border:none;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,.4);display:none;align-items:center;justify-content:center;z-index:50;" id="fabBtn" onclick="openModal()">＋</button>
@@ -132,8 +113,10 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/nav.js"></script>
 <script>
   checkAuth();
+  initNav('transactions');
 
   // Show FAB on mobile
   if (window.innerWidth <= 640) document.getElementById('fabBtn').style.display = 'flex';
