@@ -127,7 +127,7 @@
 
   async function loadReport() {
     const { start, end } = getMonthRange(curMonth, curYear);
-    const { data } = await supabase.from('kk_transactions').select('*, kk_categories(name,icon,type)').gte('date',start).lte('date',end);
+    const { data } = await db.from('kk_transactions').select('*, kk_categories(name,icon,type)').gte('date',start).lte('date',end);
     const list = data || [];
     let income = 0, expense = 0;
     list.forEach(t => t.type==='income' ? income+=t.amount : expense+=t.amount);
@@ -202,7 +202,7 @@
     const incomes=[], expenses=[];
     for (const {m,y} of months) {
       const {start,end} = getMonthRange(m,y);
-      const {data} = await supabase.from('kk_transactions').select('type,amount').gte('date',start).lte('date',end);
+      const {data} = await db.from('kk_transactions').select('type,amount').gte('date',start).lte('date',end);
       let inc=0,exp=0;
       (data||[]).forEach(t=>t.type==='income'?inc+=t.amount:exp+=t.amount);
       incomes.push(inc); expenses.push(exp);

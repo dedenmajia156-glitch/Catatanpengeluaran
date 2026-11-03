@@ -77,7 +77,7 @@
   loadCategories();
 
   async function loadCategories() {
-    const { data } = await supabase.from('kk_categories').select('*').order('is_preset',{ascending:false}).order('name');
+    const { data } = await db.from('kk_categories').select('*').order('is_preset',{ascending:false}).order('name');
     categories = data || [];
     renderGrid();
   }
@@ -124,7 +124,7 @@
     if (!name) { showSnack('⚠️ Nama kategori wajib diisi'); return; }
     const btn = document.getElementById('btnSave');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
-    const { error } = await supabase.from('kk_categories').insert({ name, type: newCatType, icon, is_preset: false });
+    const { error } = await db.from('kk_categories').insert({ name, type: newCatType, icon, is_preset: false });
     btn.disabled = false; btn.textContent = 'Simpan';
     if (error) { showSnack('❌ '+error.message); return; }
     closeModal(); showSnack('✅ Kategori ditambahkan!');
@@ -134,7 +134,7 @@
 
   async function deleteCategory(id, name) {
     if (!confirm(`Hapus kategori "${name}"?`)) return;
-    const { error } = await supabase.from('kk_categories').delete().eq('id',id);
+    const { error } = await db.from('kk_categories').delete().eq('id',id);
     if (error) { showSnack('❌ '+error.message); return; }
     showSnack('🗑️ Dihapus'); loadCategories();
   }

@@ -327,7 +327,7 @@
     const incomes = [], expenses = [];
     for (const { m, y } of months) {
       const { start, end } = getMonthRange(m, y);
-      const { data } = await supabase.from('kk_transactions').select('type,amount').gte('date', start).lte('date', end);
+      const { data } = await db.from('kk_transactions').select('type,amount').gte('date', start).lte('date', end);
       let inc = 0, exp = 0;
       (data || []).forEach(t => t.type === 'income' ? inc += t.amount : exp += t.amount);
       incomes.push(inc);
@@ -362,7 +362,7 @@
   }
 
   async function loadCategories() {
-    const { data } = await supabase.from('kk_categories').select('*').order('name');
+    const { data } = await db.from('kk_categories').select('*').order('name');
     categories = data || [];
     renderCategorySelect();
   }
@@ -436,7 +436,7 @@
     if (!date) { showSnack('⚠️ Pilih tanggal'); return; }
     const btn = document.getElementById('btnSave');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
-    const { error } = await supabase.from('kk_transactions').insert({ type: activeType, amount, category_id: catId || null, description: desc || null, date });
+    const { error } = await db.from('kk_transactions').insert({ type: activeType, amount, category_id: catId || null, description: desc || null, date });
     btn.disabled = false; btn.textContent = 'Simpan';
     if (error) { showSnack('❌ ' + error.message); return; }
     closeModal();
