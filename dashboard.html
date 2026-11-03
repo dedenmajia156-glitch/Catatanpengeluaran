@@ -417,7 +417,6 @@
       if (r.nominal) { document.getElementById('fAmount').value = r.nominal; parts.push('<strong>' + formatRupiah(r.nominal) + '</strong>'); setType('expense'); }
       if (r.merchant) parts.push('dari ' + r.merchant);
       if (r.tanggal) { document.getElementById('fDate').value = r.tanggal; parts.push('pada ' + formatDateShort(r.tanggal)); }
-      if (r.keterangan) document.getElementById('fDesc').value = r.keterangan;
       if (!r.nominal && !r.merchant) {
         document.getElementById('qrisError').textContent = '⚠️ Tidak dapat membaca gambar. Isi manual ya.';
         document.getElementById('qrisError').style.display = 'block';
