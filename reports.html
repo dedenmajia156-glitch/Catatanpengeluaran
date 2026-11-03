@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan · Keuangan Keluarga</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">🏠</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-item" title="Dashboard">🏠</a>
+      <a href="transactions.html" class="sidebar-item" title="Transaksi">📋</a>
+      <a href="reports.html" class="sidebar-item active" title="Laporan">📊</a>
+      <a href="categories.html" class="sidebar-item" title="Kategori">🏷️</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-item" onclick="logout()">🚪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>📊 <span>Laporan</span></h1>
+      <div class="page-header-right">
+        <div class="month-selector">
+          <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+          <span id="monthLabel">—</span>
+          <button class="month-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="report-grid">
+      <div class="report-stat">
+        <div class="rs-label">💚 Total Pemasukan</div>
+        <div class="rs-value income" id="rIncome">Rp 0</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-label">❤️ Total Pengeluaran</div>
+        <div class="rs-value expense" id="rExpense">Rp 0</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-label">💜 Saldo Bersih</div>
+        <div class="rs-value neutral" id="rSaldo">Rp 0</div>
+      </div>
+      <div class="report-stat">
+        <div class="rs-label">📝 Total Transaksi</div>
+        <div class="rs-value neutral" id="rCount">0</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="chartsRow">
+      <!-- Bar 6 months -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3>6 Bulan Terakhir</h3>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+      <!-- Donut -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3>Pengeluaran per Kategori</h3>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="donutChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Tables -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="tablesRow">
+      <div>
+        <div class="trx-card">
+          <div class="trx-card-header"><div><h3>Detail Pemasukan</h3><p>per kategori bulan ini</p></div></div>
+          <div id="incomeTable"><div class="loading">Memuat...</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="trx-card">
+          <div class="trx-card-header"><div><h3>Detail Pengeluaran</h3><p>per kategori bulan ini</p></div></div>
+          <div id="expenseTable"><div class="loading">Memuat...</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Beranda</a>
+    <a href="transactions.html" class="nav-item"><span class="nav-icon">📋</span>Transaksi</a>
+    <a href="reports.html" class="nav-item active"><span class="nav-icon">📊</span>Laporan</a>
+    <a href="categories.html" class="nav-item"><span class="nav-icon">🏷️</span>Kategori</a>
+    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  checkAuth();
+
+  // Responsive charts grid
+  function fixGrid() {
+    const w = window.innerWidth;
+    const r = document.getElementById('chartsRow');
+    const t = document.getElementById('tablesRow');
+    if (w <= 640) {
+      r.style.gridTemplateColumns = '1fr';
+      t.style.gridTemplateColumns = '1fr';
+    } else {
+      r.style.gridTemplateColumns = '1fr 1fr';
+      t.style.gridTemplateColumns = '1fr 1fr';
+    }
+  }
+  fixGrid();
+  window.addEventListener('resize', fixGrid);
+
+  let curMonth = getCurrentMonth().month;
+  let curYear = getCurrentMonth().year;
+  let barInst = null, donutInst = null;
+
+  renderMonth(); loadReport(); load6Months();
+
+  function renderMonth() { document.getElementById('monthLabel').textContent = getMonthLabel(curMonth, curYear); }
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 12) { curMonth = 1; curYear++; }
+    if (curMonth < 1) { curMonth = 12; curYear--; }
+    renderMonth(); loadReport();
+  }
+
+  async function loadReport() {
+    const { start, end } = getMonthRange(curMonth, curYear);
+    const { data } = await supabase.from('kk_transactions').select('*, kk_categories(name,icon,type)').gte('date',start).lte('date',end);
+    const list = data || [];
+    let income = 0, expense = 0;
+    list.forEach(t => t.type==='income' ? income+=t.amount : expense+=t.amount);
+    const saldo = income - expense;
+    document.getElementById('rIncome').textContent = formatRupiah(income);
+    document.getElementById('rExpense').textContent = formatRupiah(expense);
+    document.getElementById('rSaldo').textContent = (saldo<0?'-':'')+formatRupiah(Math.abs(saldo));
+    document.getElementById('rSaldo').style.color = saldo>=0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('rCount').textContent = list.length + ' transaksi';
+    renderCatTables(list);
+    renderDonut(list);
+  }
+
+  function renderCatTables(list) {
+    const inc = {}, exp = {};
+    list.forEach(t => {
+      const n = t.kk_categories?.name || 'Lain-lain';
+      const i = t.kk_categories?.icon || (t.type==='income'?'💵':'💸');
+      if (t.type==='income') { if(!inc[n]) inc[n]={icon:i,total:0}; inc[n].total+=t.amount; }
+      else { if(!exp[n]) exp[n]={icon:i,total:0}; exp[n].total+=t.amount; }
+    });
+
+    const make = (map, elId, type) => {
+      const el = document.getElementById(elId);
+      const entries = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+      if (!entries.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px">Tidak ada data</div>'; return; }
+      el.innerHTML = `<table class="trx-table"><tbody>` +
+        entries.map(([name,d]) => `
+          <tr>
+            <td><div class="trx-icon-cell"><div class="trx-icon-box ${type}">${d.icon}</div><div class="trx-name">${name}</div></div></td>
+            <td class="trx-amount-cell ${type}">${formatRupiah(d.total)}</td>
+          </tr>`).join('') +
+        `</tbody></table>`;
+    };
+    make(inc,'incomeTable','income');
+    make(exp,'expenseTable','expense');
+  }
+
+  function renderDonut(list) {
+    const expMap = {};
+    list.filter(t=>t.type==='expense').forEach(t => {
+      const n = t.kk_categories?.name||'Lain-lain';
+      expMap[n] = (expMap[n]||0)+t.amount;
+    });
+    const labels = Object.keys(expMap);
+    const values = Object.values(expMap);
+    const colors = ['#16a34a','#ef4444','#f59e0b','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
+    if (donutInst) donutInst.destroy();
+    const ctx = document.getElementById('donutChart').getContext('2d');
+    if (!labels.length) { ctx.clearRect(0,0,400,400); return; }
+    donutInst = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0,values.length), borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { font:{size:11}, boxWidth:12, padding:8 } },
+          tooltip: { callbacks: { label: c => ' '+formatRupiah(c.raw) } }
+        }
+      }
+    });
+  }
+
+  async function load6Months() {
+    const months = [], labels = [];
+    for (let i=5; i>=0; i--) {
+      let m=curMonth-i, y=curYear;
+      if(m<=0){m+=12;y--;}
+      months.push({m,y});
+      labels.push(new Date(y,m-1).toLocaleDateString('id-ID',{month:'short'}));
+    }
+    const incomes=[], expenses=[];
+    for (const {m,y} of months) {
+      const {start,end} = getMonthRange(m,y);
+      const {data} = await supabase.from('kk_transactions').select('type,amount').gte('date',start).lte('date',end);
+      let inc=0,exp=0;
+      (data||[]).forEach(t=>t.type==='income'?inc+=t.amount:exp+=t.amount);
+      incomes.push(inc); expenses.push(exp);
+    }
+    if (barInst) barInst.destroy();
+    const ctx = document.getElementById('barChart').getContext('2d');
+    barInst = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label:'Masuk', data:incomes, backgroundColor:'rgba(22,163,74,.75)', borderRadius:8, borderSkipped:false },
+        { label:'Keluar', data:expenses, backgroundColor:'rgba(239,68,68,.65)', borderRadius:8, borderSkipped:false }
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{position:'top',labels:{font:{size:11},boxWidth:10}}, tooltip:{callbacks:{label:c=>' '+formatRupiah(c.raw)}} },
+        scales: {
+          x:{grid:{display:false},ticks:{font:{size:11}}},
+          y:{grid:{color:'#f0f0f0'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(0)+'jt':v>=1e3?(v/1e3).toFixed(0)+'rb':v,font:{size:10}}}
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>

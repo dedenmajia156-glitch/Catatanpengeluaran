@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keuangan Keluarga</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-icon-wrap">🏠</div>
+      <h1>Keuangan Keluarga</h1>
+      <p>Masukkan kata sandi untuk melanjutkan</p>
+      <input type="password" id="passInput" placeholder="••••••••" autofocus>
+      <button class="btn-login" onclick="doLogin()">Masuk →</button>
+      <div class="login-error" id="loginError">❌ Kata sandi salah, coba lagi.</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    if (sessionStorage.getItem('kk_auth')) window.location.href = 'dashboard.html';
+
+    document.getElementById('passInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    function doLogin() {
+      const val = document.getElementById('passInput').value.trim();
+      if (val === APP_PASSWORD) {
+        sessionStorage.setItem('kk_auth', '1');
+        window.location.href = 'dashboard.html';
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('passInput').value = '';
+        document.getElementById('passInput').focus();
+      }
+    }
+  </script>
+</body>
+</html>

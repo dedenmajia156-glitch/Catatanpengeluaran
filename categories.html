@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kategori · Keuangan Keluarga</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">🏠</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-item" title="Dashboard">🏠</a>
+      <a href="transactions.html" class="sidebar-item" title="Transaksi">📋</a>
+      <a href="reports.html" class="sidebar-item" title="Laporan">📊</a>
+      <a href="categories.html" class="sidebar-item active" title="Kategori">🏷️</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-item" onclick="logout()">🚪</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🏷️ <span>Kategori</span></h1>
+      <button class="btn-add" onclick="openModal()">＋ Tambah Kategori</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabIncome" onclick="setTab('income')">💚 Pemasukan</button>
+      <button class="tab-btn" id="tabExpense" onclick="setTab('expense')">❤️ Pengeluaran</button>
+    </div>
+
+    <!-- Category Grid -->
+    <div class="cat-grid" id="catGrid">
+      <div class="loading" style="grid-column:1/-1">Memuat...</div>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Beranda</a>
+    <a href="transactions.html" class="nav-item"><span class="nav-icon">📋</span>Transaksi</a>
+    <a href="reports.html" class="nav-item"><span class="nav-icon">📊</span>Laporan</a>
+    <a href="categories.html" class="nav-item active"><span class="nav-icon">🏷️</span>Kategori</a>
+    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</nav>
+
+<!-- Add Category Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Tambah Kategori</div>
+    <div class="modal-body">
+      <div class="type-toggle">
+        <button class="type-btn active-income" id="btnIncome" onclick="setCatType('income')">💚 Pemasukan</button>
+        <button class="type-btn" id="btnExpense" onclick="setCatType('expense')">❤️ Pengeluaran</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji / Icon</label>
+        <input type="text" class="form-input" id="fIcon" placeholder="📌" maxlength="4" style="text-align:center;font-size:24px;">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Contoh: 🎯 🛍️ 🎓 💊 ✈️ 🎸 🏋️</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Kategori *</label>
+        <input type="text" class="form-input" id="fName" placeholder="Nama kategori...">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" id="btnSave" onclick="saveCategory()">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  checkAuth();
+
+  let activeTab = 'income';
+  let newCatType = 'income';
+  let categories = [];
+
+  loadCategories();
+
+  async function loadCategories() {
+    const { data } = await supabase.from('kk_categories').select('*').order('is_preset',{ascending:false}).order('name');
+    categories = data || [];
+    renderGrid();
+  }
+
+  function setTab(type) {
+    activeTab = type;
+    document.getElementById('tabIncome').className = 'tab-btn'+(type==='income'?' active':'');
+    document.getElementById('tabExpense').className = 'tab-btn'+(type==='expense'?' active':'');
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const el = document.getElementById('catGrid');
+    const list = categories.filter(c=>c.type===activeTab);
+    if (!list.length) { el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="ei">🏷️</div><p>Belum ada kategori</p></div>'; return; }
+    el.innerHTML = list.map(c => `
+      <div class="cat-item">
+        <div class="cat-icon-box ${c.type}">${c.icon||'📌'}</div>
+        <div class="cat-name">${c.name}</div>
+        ${c.is_preset
+          ? '<span class="badge-preset">Preset</span>'
+          : `<button class="btn-del-sm" onclick="deleteCategory('${c.id}','${c.name.replace(/'/g,"\\'")}')">Hapus</button>`}
+      </div>`).join('');
+  }
+
+  function setCatType(type) {
+    newCatType = type;
+    document.getElementById('btnIncome').className = 'type-btn'+(type==='income'?' active-income':'');
+    document.getElementById('btnExpense').className = 'type-btn'+(type==='expense'?' active-expense':'');
+  }
+
+  function openModal() {
+    document.getElementById('fIcon').value = '';
+    document.getElementById('fName').value = '';
+    setCatType(activeTab);
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+  async function saveCategory() {
+    const name = document.getElementById('fName').value.trim();
+    const icon = document.getElementById('fIcon').value.trim() || '📌';
+    if (!name) { showSnack('⚠️ Nama kategori wajib diisi'); return; }
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    const { error } = await supabase.from('kk_categories').insert({ name, type: newCatType, icon, is_preset: false });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error) { showSnack('❌ '+error.message); return; }
+    closeModal(); showSnack('✅ Kategori ditambahkan!');
+    setTab(newCatType);
+    loadCategories();
+  }
+
+  async function deleteCategory(id, name) {
+    if (!confirm(`Hapus kategori "${name}"?`)) return;
+    const { error } = await supabase.from('kk_categories').delete().eq('id',id);
+    if (error) { showSnack('❌ '+error.message); return; }
+    showSnack('🗑️ Dihapus'); loadCategories();
+  }
+
+  function showSnack(msg) {
+    const el = document.getElementById('snackbar');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),2800);
+  }
+</script>
+</body>
+</html>

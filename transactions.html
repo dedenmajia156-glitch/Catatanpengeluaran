@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaksi · Keuangan Keluarga</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🏠</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-item" title="Dashboard">🏠</a>
+      <a href="transactions.html" class="sidebar-item active" title="Transaksi">📋</a>
+      <a href="reports.html" class="sidebar-item" title="Laporan">📊</a>
+      <a href="categories.html" class="sidebar-item" title="Kategori">🏷️</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-item" onclick="logout()" title="Keluar">🚪</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1>📋 <span>Transaksi</span></h1>
+      <div class="page-header-right">
+        <div class="month-selector">
+          <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+          <span id="monthLabel">—</span>
+          <button class="month-btn" onclick="changeMonth(1)">›</button>
+        </div>
+        <button class="btn-add" onclick="openModal()">＋ Tambah</button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">Semua</button>
+      <button class="filter-chip" onclick="setFilter('income',this)">💚 Pemasukan</button>
+      <button class="filter-chip" onclick="setFilter('expense',this)">❤️ Pengeluaran</button>
+    </div>
+
+    <!-- Table -->
+    <div class="trx-card">
+      <div class="trx-card-header">
+        <div>
+          <h3>Riwayat Transaksi</h3>
+          <p id="trxSubtitle">Memuat...</p>
+        </div>
+      </div>
+      <div id="trxWrap"><div class="loading">Memuat...</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Beranda</a>
+    <a href="transactions.html" class="nav-item active"><span class="nav-icon">📋</span>Transaksi</a>
+    <a href="reports.html" class="nav-item"><span class="nav-icon">📊</span>Laporan</a>
+    <a href="categories.html" class="nav-item"><span class="nav-icon">🏷️</span>Kategori</a>
+    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</nav>
+
+<!-- FAB mobile -->
+<button style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;background:var(--green);color:white;border:none;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,.4);display:none;align-items:center;justify-content:center;z-index:50;" id="fabBtn" onclick="openModal()">＋</button>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Tambah Transaksi</div>
+    <div class="modal-body">
+      <div class="type-toggle">
+        <button class="type-btn active-income" id="btnIncome" onclick="setType('income')">💚 Pemasukan</button>
+        <button class="type-btn" id="btnExpense" onclick="setType('expense')">❤️ Pengeluaran</button>
+      </div>
+      <div class="qris-note">ℹ️ <strong>Upload SS QRIS/Transfer</strong> untuk auto-isi nominal, merchant & tanggal. AI hanya membaca gambar, tidak menyimpannya.</div>
+      <input type="file" id="qrisFile" accept="image/*" style="display:none" onchange="handleQRIS(this)">
+      <div class="qris-box" onclick="document.getElementById('qrisFile').click()">
+        <div class="qi">📷</div>
+        <div class="qt">Upload Screenshot QRIS / Transfer</div>
+        <div class="qs">Tap untuk pilih dari galeri</div>
+      </div>
+      <div class="qris-loading" id="qrisLoading">🤖 AI sedang membaca gambar...</div>
+      <div class="qris-result" id="qrisResult"></div>
+      <div class="qris-error" id="qrisError"></div>
+      <div class="form-group">
+        <label class="form-label">Nominal *</label>
+        <div class="nominal-wrap">
+          <span class="rp-prefix">Rp</span>
+          <input type="number" class="form-input" id="fAmount" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select class="form-select" id="fCategory"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal *</label>
+        <input type="date" class="form-input" id="fDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <input type="text" class="form-input" id="fDesc" placeholder="Opsional...">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" id="btnSave" onclick="saveTransaction()">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  checkAuth();
+
+  // Show FAB on mobile
+  if (window.innerWidth <= 640) document.getElementById('fabBtn').style.display = 'flex';
+  window.addEventListener('resize', () => {
+    document.getElementById('fabBtn').style.display = window.innerWidth <= 640 ? 'flex' : 'none';
+  });
+
+  let curMonth = getCurrentMonth().month;
+  let curYear = getCurrentMonth().year;
+  let activeType = 'income';
+  let activeFilter = 'all';
+  let categories = [];
+  let allTrx = [];
+
+  document.getElementById('fDate').value = todayStr();
+  renderMonth();
+  loadCategories();
+  loadData();
+
+  function renderMonth() {
+    document.getElementById('monthLabel').textContent = getMonthLabel(curMonth, curYear);
+  }
+
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 12) { curMonth = 1; curYear++; }
+    if (curMonth < 1) { curMonth = 12; curYear--; }
+    renderMonth();
+    loadData();
+  }
+
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderTable();
+  }
+
+  async function loadData() {
+    document.getElementById('trxWrap').innerHTML = '<div class="loading">Memuat...</div>';
+    const { start, end } = getMonthRange(curMonth, curYear);
+    const { data } = await supabase
+      .from('kk_transactions')
+      .select('*, kk_categories(name,icon,type)')
+      .gte('date', start).lte('date', end)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+    allTrx = data || [];
+    renderTable();
+  }
+
+  function renderTable() {
+    const list = allTrx.filter(t => activeFilter === 'all' || t.type === activeFilter);
+    document.getElementById('trxSubtitle').textContent = list.length + ' transaksi ditemukan';
+
+    if (!list.length) {
+      document.getElementById('trxWrap').innerHTML = '<div class="empty-state"><div class="ei">📭</div><p>Tidak ada transaksi</p></div>';
+      return;
+    }
+
+    // Group by date
+    const groups = {};
+    list.forEach(t => { if (!groups[t.date]) groups[t.date] = []; groups[t.date].push(t); });
+
+    let html = `<table class="trx-table">
+      <thead><tr>
+        <th>Keterangan</th><th>Tanggal</th><th>Waktu</th><th>Tipe</th><th>Nominal</th>
+      </tr></thead><tbody>`;
+
+    Object.keys(groups).sort((a,b) => b.localeCompare(a)).forEach(date => {
+      groups[date].forEach(t => {
+        const cat = t.kk_categories;
+        const icon = cat?.icon || (t.type === 'income' ? '💵' : '💸');
+        const name = t.description || cat?.name || (t.type === 'income' ? 'Pemasukan' : 'Pengeluaran');
+        const d = new Date(t.created_at);
+        const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const sign = t.type === 'income' ? '+' : '-';
+        html += `<tr onclick="showDetail('${t.id}')">
+          <td>
+            <div class="trx-icon-cell">
+              <div class="trx-icon-box ${t.type}">${icon}</div>
+              <div>
+                <div class="trx-name">${name}</div>
+                <div class="trx-cat">${cat?.name || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td class="trx-date">${formatDateShort(t.date)}</td>
+          <td class="trx-date">${time}</td>
+          <td><div class="status-dot ${t.type === 'expense' ? 'expense' : ''}">${t.type === 'income' ? 'Masuk' : 'Keluar'}</div></td>
+          <td class="trx-amount-cell ${t.type}">${sign}${formatRupiah(t.amount)}</td>
+        </tr>`;
+      });
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('trxWrap').innerHTML = html;
+  }
+
+  async function loadCategories() {
+    const { data } = await supabase.from('kk_categories').select('*').order('name');
+    categories = data || [];
+    renderCategorySelect();
+  }
+
+  function renderCategorySelect() {
+    document.getElementById('fCategory').innerHTML = categories.filter(c => c.type === activeType)
+      .map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  }
+
+  function setType(t) {
+    activeType = t;
+    document.getElementById('btnIncome').className = 'type-btn' + (t === 'income' ? ' active-income' : '');
+    document.getElementById('btnExpense').className = 'type-btn' + (t === 'expense' ? ' active-expense' : '');
+    renderCategorySelect();
+  }
+
+  function openModal() {
+    ['qrisResult','qrisError','qrisLoading'].forEach(id => document.getElementById(id).style.display='none');
+    document.getElementById('qrisFile').value = '';
+    document.getElementById('fAmount').value = '';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fDate').value = todayStr();
+    setType('income');
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+  async function handleQRIS(input) {
+    const file = input.files[0]; if (!file) return;
+    document.getElementById('qrisLoading').style.display = 'block';
+    document.getElementById('qrisResult').style.display = 'none';
+    document.getElementById('qrisError').style.display = 'none';
+    try {
+      const { base64, mimeType } = await fileToBase64(file);
+      const r = await extractFromQRIS(base64, mimeType);
+      const parts = [];
+      if (r.nominal) { document.getElementById('fAmount').value = r.nominal; parts.push('<strong>'+formatRupiah(r.nominal)+'</strong>'); setType('expense'); }
+      if (r.merchant) parts.push('dari '+r.merchant);
+      if (r.tanggal) { document.getElementById('fDate').value = r.tanggal; parts.push('pada '+formatDateShort(r.tanggal)); }
+      if (r.keterangan) document.getElementById('fDesc').value = r.keterangan;
+      if (!r.nominal && !r.merchant) {
+        document.getElementById('qrisError').textContent = '⚠️ Tidak terbaca. Isi manual ya.';
+        document.getElementById('qrisError').style.display = 'block';
+      } else {
+        document.getElementById('qrisResult').innerHTML = '✅ Terbaca: '+parts.join(' · ')+'. Periksa & sesuaikan jika perlu.';
+        document.getElementById('qrisResult').style.display = 'block';
+      }
+    } catch(e) {
+      document.getElementById('qrisError').textContent = '❌ ' + e.message;
+      document.getElementById('qrisError').style.display = 'block';
+    } finally {
+      document.getElementById('qrisLoading').style.display = 'none';
+    }
+  }
+
+  async function saveTransaction() {
+    const amount = parseInt(document.getElementById('fAmount').value);
+    const date = document.getElementById('fDate').value;
+    const desc = document.getElementById('fDesc').value.trim();
+    const catId = document.getElementById('fCategory').value;
+    if (!amount || amount <= 0) { showSnack('⚠️ Masukkan nominal'); return; }
+    if (!date) { showSnack('⚠️ Pilih tanggal'); return; }
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    const { error } = await supabase.from('kk_transactions').insert({ type: activeType, amount, category_id: catId||null, description: desc||null, date });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error) { showSnack('❌ '+error.message); return; }
+    closeModal(); showSnack('✅ Transaksi disimpan!'); loadData();
+  }
+
+  function showDetail(id) {
+    const t = allTrx.find(x => x.id === id); if (!t) return;
+    const cat = t.kk_categories;
+    const icon = cat?.icon || (t.type === 'income' ? '💵' : '💸');
+    const name = t.description || cat?.name || '-';
+    const sign = t.type === 'income' ? '+' : '-';
+    document.getElementById('detailBody').innerHTML = `
+      <div class="detail-icon-big">${icon}</div>
+      <div class="detail-amount" style="color:var(--${t.type==='income'?'green':'red'})">${sign}${formatRupiah(t.amount)}</div>
+      <div class="detail-meta">
+        ${cat?.name ? '<strong>' + cat.name + '</strong><br>' : ''}
+        ${formatDate(t.date)}
+        ${t.description ? '<br><em>' + t.description + '</em>' : ''}
+      </div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-ghost" style="flex:0;padding:12px 24px" onclick="closeDetail()">Tutup</button>
+        <button class="btn" style="flex:0;padding:12px 24px;background:var(--red-light);color:var(--red)" onclick="deleteTrx('${t.id}')">🗑️ Hapus</button>
+      </div>`;
+    document.getElementById('detailOverlay').classList.add('open');
+  }
+
+  function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
+
+  async function deleteTrx(id) {
+    if (!confirm('Hapus transaksi ini?')) return;
+    const { error } = await supabase.from('kk_transactions').delete().eq('id', id);
+    if (error) { showSnack('❌ Gagal hapus'); return; }
+    closeDetail(); showSnack('🗑️ Dihapus'); loadData();
+  }
+
+  function showSnack(msg) {
+    const el = document.getElementById('snackbar');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>

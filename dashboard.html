@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard · Keuangan Keluarga</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ── Sidebar (desktop) ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🏠</div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-item active" title="Dashboard">🏠</a>
+      <a href="transactions.html" class="sidebar-item" title="Transaksi">📋</a>
+      <a href="reports.html" class="sidebar-item" title="Laporan">📊</a>
+      <a href="categories.html" class="sidebar-item" title="Kategori">🏷️</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-item" onclick="logout()" title="Keluar">🚪</button>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1>Selamat Datang, <span>Keluarga</span> 👋</h1>
+      <div class="page-header-right">
+        <div class="month-selector">
+          <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+          <span id="monthLabel">—</span>
+          <button class="month-btn" onclick="changeMonth(1)">›</button>
+        </div>
+        <button class="btn-add" onclick="openModal()">＋ Tambah Transaksi</button>
+      </div>
+    </div>
+
+    <!-- Dashboard 3-Column Grid -->
+    <div class="dash-grid">
+
+      <!-- COL LEFT: Balance Card + Income Mini -->
+      <div class="dash-col">
+        <!-- Balance Card -->
+        <div class="balance-card">
+          <div class="bc-label">💜 Saldo Bersih</div>
+          <div class="bc-title">Bulan Ini</div>
+          <div class="bc-amount" id="saldoCard">Rp 0</div>
+          <div class="bc-meta">
+            <span class="bc-tag">Keuangan Keluarga</span>
+            <span style="font-size:20px;">🏡</span>
+          </div>
+        </div>
+        <!-- Income Mini -->
+        <div class="mini-card">
+          <div class="mc-label">💚 Total Pemasukan</div>
+          <div class="mc-value income" id="totalIncome">Rp 0</div>
+        </div>
+        <!-- Expense Mini -->
+        <div class="mini-card">
+          <div class="mc-label">❤️ Total Pengeluaran</div>
+          <div class="mc-value expense" id="totalExpense">Rp 0</div>
+        </div>
+      </div>
+
+      <!-- COL CENTER: Bar Chart -->
+      <div class="dash-col">
+        <div class="chart-card" style="flex:1">
+          <div class="chart-card-header">
+            <div>
+              <h3>Pemasukan vs Pengeluaran</h3>
+              <p style="font-size:12px;color:var(--text-muted);">6 bulan terakhir</p>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:240px;">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL RIGHT: Summary + Actions + Trx Count -->
+      <div class="dash-col">
+        <!-- Summary Card -->
+        <div class="summary-card">
+          <div class="sc-label">📊 Perbandingan Bulan Ini</div>
+          <div class="sc-amount" id="saldoRight">Rp 0</div>
+          <div class="sc-chart-wrap">
+            <canvas id="miniLine"></canvas>
+          </div>
+          <div class="action-row">
+            <button class="btn-action btn-income-action" onclick="openModal('income')">💚 Catat Masuk</button>
+            <button class="btn-action btn-expense-action" onclick="openModal('expense')">❤️ Catat Keluar</button>
+          </div>
+        </div>
+        <!-- Trx Count -->
+        <div class="mini-card">
+          <div class="mc-label">📝 Jumlah Transaksi Bulan Ini</div>
+          <div class="mc-value neutral" id="trxCount" style="color:var(--text);">0 transaksi</div>
+        </div>
+        <!-- Top Expense -->
+        <div class="mini-card">
+          <div class="mc-label">🔝 Pengeluaran Terbesar</div>
+          <div class="mc-value expense" id="topExpense" style="font-size:16px;">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="trx-card">
+      <div class="trx-card-header">
+        <div>
+          <h3>Transaksi Terbaru</h3>
+          <p>Riwayat pembayaran terakhir bulan ini</p>
+        </div>
+        <a href="transactions.html" class="see-all">Lihat Semua →</a>
+      </div>
+      <div id="recentTableWrap">
+        <div class="loading">Memuat...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Bottom Nav (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="dashboard.html" class="nav-item active"><span class="nav-icon">🏠</span>Beranda</a>
+    <a href="transactions.html" class="nav-item"><span class="nav-icon">📋</span>Transaksi</a>
+    <a href="reports.html" class="nav-item"><span class="nav-icon">📊</span>Laporan</a>
+    <a href="categories.html" class="nav-item"><span class="nav-icon">🏷️</span>Kategori</a>
+    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</nav>
+
+<!-- Add Transaction Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Tambah Transaksi</div>
+    <div class="modal-body">
+      <div class="type-toggle">
+        <button class="type-btn active-income" id="btnIncome" onclick="setType('income')">💚 Pemasukan</button>
+        <button class="type-btn" id="btnExpense" onclick="setType('expense')">❤️ Pengeluaran</button>
+      </div>
+      <div class="qris-note">ℹ️ <strong>Upload SS QRIS/Transfer</strong> untuk auto-isi nominal, merchant & tanggal. AI hanya membaca gambar, tidak menyimpannya.</div>
+      <input type="file" id="qrisFile" accept="image/*" style="display:none" onchange="handleQRIS(this)">
+      <div class="qris-box" onclick="document.getElementById('qrisFile').click()">
+        <div class="qi">📷</div>
+        <div class="qt">Upload Screenshot QRIS / Transfer</div>
+        <div class="qs">Tap untuk pilih dari galeri</div>
+      </div>
+      <div class="qris-loading" id="qrisLoading">🤖 AI sedang membaca gambar...</div>
+      <div class="qris-result" id="qrisResult"></div>
+      <div class="qris-error" id="qrisError"></div>
+      <div class="form-group">
+        <label class="form-label">Nominal *</label>
+        <div class="nominal-wrap">
+          <span class="rp-prefix">Rp</span>
+          <input type="number" class="form-input" id="fAmount" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select class="form-select" id="fCategory"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal *</label>
+        <input type="date" class="form-input" id="fDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <input type="text" class="form-input" id="fDesc" placeholder="Opsional...">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" id="btnSave" onclick="saveTransaction()">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Snackbar -->
+<div class="snackbar" id="snackbar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  checkAuth();
+
+  let curMonth = getCurrentMonth().month;
+  let curYear = getCurrentMonth().year;
+  let activeType = 'income';
+  let categories = [];
+  let barChartInst = null;
+  let miniLineInst = null;
+
+  document.getElementById('fDate').value = todayStr();
+  renderMonth();
+  loadCategories();
+  loadData();
+  load6Months();
+
+  function renderMonth() {
+    document.getElementById('monthLabel').textContent = getMonthLabel(curMonth, curYear);
+  }
+
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 12) { curMonth = 1; curYear++; }
+    if (curMonth < 1) { curMonth = 12; curYear--; }
+    renderMonth();
+    loadData();
+    load6Months();
+  }
+
+  async function loadData() {
+    const { start, end } = getMonthRange(curMonth, curYear);
+    const { data } = await supabase
+      .from('kk_transactions')
+      .select('*, kk_categories(name, icon, type)')
+      .gte('date', start).lte('date', end)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    const list = data || [];
+    let income = 0, expense = 0;
+    let topCat = '', topAmt = 0;
+    const expCats = {};
+
+    list.forEach(t => {
+      if (t.type === 'income') income += t.amount;
+      else {
+        expense += t.amount;
+        const cn = t.kk_categories?.name || 'Lain-lain';
+        expCats[cn] = (expCats[cn] || 0) + t.amount;
+      }
+    });
+
+    // Find top expense category
+    Object.entries(expCats).sort((a,b) => b[1]-a[1]).slice(0,1).forEach(([k,v]) => { topCat = k; topAmt = v; });
+
+    const saldo = income - expense;
+    const saldoFmt = formatRupiah(Math.abs(saldo));
+    const saldoSign = saldo >= 0 ? '' : '-';
+
+    document.getElementById('totalIncome').textContent = formatRupiah(income);
+    document.getElementById('totalExpense').textContent = formatRupiah(expense);
+    document.getElementById('saldoCard').textContent = saldoSign + saldoFmt;
+    document.getElementById('saldoRight').textContent = saldoSign + saldoFmt;
+    document.getElementById('saldoRight').style.color = saldo >= 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('trxCount').textContent = list.length + ' transaksi';
+    document.getElementById('topExpense').textContent = topCat ? topCat + ' · ' + formatRupiah(topAmt) : '—';
+
+    renderMiniLine(income, expense);
+    renderRecentTable(list.slice(0, 7));
+  }
+
+  function renderRecentTable(list) {
+    const wrap = document.getElementById('recentTableWrap');
+    if (!list.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="ei">📭</div><p>Belum ada transaksi bulan ini</p></div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table class="trx-table">
+        <thead>
+          <tr>
+            <th>Keterangan</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Tipe</th>
+            <th>Nominal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(t => {
+            const cat = t.kk_categories;
+            const icon = cat?.icon || (t.type === 'income' ? '💵' : '💸');
+            const name = t.description || cat?.name || (t.type === 'income' ? 'Pemasukan' : 'Pengeluaran');
+            const catName = cat?.name || '';
+            const d = new Date(t.created_at);
+            const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const sign = t.type === 'income' ? '+' : '-';
+            return `
+              <tr>
+                <td>
+                  <div class="trx-icon-cell">
+                    <div class="trx-icon-box ${t.type}">${icon}</div>
+                    <div>
+                      <div class="trx-name">${name}</div>
+                      <div class="trx-cat">${catName}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="trx-date">${formatDateShort(t.date)}</td>
+                <td class="trx-date">${time}</td>
+                <td><div class="status-dot ${t.type === 'expense' ? 'expense' : ''}">${t.type === 'income' ? 'Masuk' : 'Keluar'}</div></td>
+                <td class="trx-amount-cell ${t.type}">${sign}${formatRupiah(t.amount)}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderMiniLine(income, expense) {
+    if (miniLineInst) miniLineInst.destroy();
+    const ctx = document.getElementById('miniLine').getContext('2d');
+    miniLineInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['', 'Masuk', 'Keluar', ''],
+        datasets: [{
+          data: [0, income, expense, 0],
+          borderColor: income >= expense ? '#16a34a' : '#ef4444',
+          backgroundColor: income >= expense ? 'rgba(22,163,74,.1)' : 'rgba(239,68,68,.1)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: [0, 4, 4, 0],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => formatRupiah(c.raw) } } },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    });
+  }
+
+  async function load6Months() {
+    const months = [];
+    const labels = [];
+    for (let i = 5; i >= 0; i--) {
+      let m = curMonth - i, y = curYear;
+      if (m <= 0) { m += 12; y--; }
+      months.push({ m, y });
+      labels.push(new Date(y, m - 1).toLocaleDateString('id-ID', { month: 'short' }));
+    }
+    const incomes = [], expenses = [];
+    for (const { m, y } of months) {
+      const { start, end } = getMonthRange(m, y);
+      const { data } = await supabase.from('kk_transactions').select('type,amount').gte('date', start).lte('date', end);
+      let inc = 0, exp = 0;
+      (data || []).forEach(t => t.type === 'income' ? inc += t.amount : exp += t.amount);
+      incomes.push(inc);
+      expenses.push(exp);
+    }
+    if (barChartInst) barChartInst.destroy();
+    const ctx = document.getElementById('barChart').getContext('2d');
+    barChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Masuk', data: incomes, backgroundColor: 'rgba(22,163,74,.75)', borderRadius: 8, borderSkipped: false },
+          { label: 'Keluar', data: expenses, backgroundColor: 'rgba(239,68,68,.65)', borderRadius: 8, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12 }, boxWidth: 12, padding: 16 } },
+          tooltip: { callbacks: { label: c => ' ' + formatRupiah(c.raw) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+          y: {
+            grid: { color: '#f0f0f0' },
+            ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'jt' : v >= 1e3 ? (v/1e3).toFixed(0)+'rb' : v, font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  async function loadCategories() {
+    const { data } = await supabase.from('kk_categories').select('*').order('name');
+    categories = data || [];
+    renderCategorySelect();
+  }
+
+  function renderCategorySelect() {
+    const sel = document.getElementById('fCategory');
+    sel.innerHTML = categories.filter(c => c.type === activeType)
+      .map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  }
+
+  function setType(type) {
+    activeType = type;
+    document.getElementById('btnIncome').className = 'type-btn' + (type === 'income' ? ' active-income' : '');
+    document.getElementById('btnExpense').className = 'type-btn' + (type === 'expense' ? ' active-expense' : '');
+    renderCategorySelect();
+  }
+
+  function openModal(type) {
+    resetModal();
+    if (type) setType(type);
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function resetModal() {
+    document.getElementById('qrisFile').value = '';
+    ['qrisResult','qrisError','qrisLoading'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('fAmount').value = '';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fDate').value = todayStr();
+    setType('income');
+  }
+
+  async function handleQRIS(input) {
+    const file = input.files[0]; if (!file) return;
+    document.getElementById('qrisLoading').style.display = 'block';
+    document.getElementById('qrisResult').style.display = 'none';
+    document.getElementById('qrisError').style.display = 'none';
+    try {
+      const { base64, mimeType } = await fileToBase64(file);
+      const r = await extractFromQRIS(base64, mimeType);
+      const parts = [];
+      if (r.nominal) { document.getElementById('fAmount').value = r.nominal; parts.push('<strong>' + formatRupiah(r.nominal) + '</strong>'); setType('expense'); }
+      if (r.merchant) parts.push('dari ' + r.merchant);
+      if (r.tanggal) { document.getElementById('fDate').value = r.tanggal; parts.push('pada ' + formatDateShort(r.tanggal)); }
+      if (r.keterangan) document.getElementById('fDesc').value = r.keterangan;
+      if (!r.nominal && !r.merchant) {
+        document.getElementById('qrisError').textContent = '⚠️ Tidak dapat membaca gambar. Isi manual ya.';
+        document.getElementById('qrisError').style.display = 'block';
+      } else {
+        document.getElementById('qrisResult').innerHTML = '✅ Terbaca: ' + parts.join(' · ') + '. Periksa & sesuaikan jika perlu.';
+        document.getElementById('qrisResult').style.display = 'block';
+      }
+    } catch (e) {
+      document.getElementById('qrisError').textContent = '❌ ' + e.message;
+      document.getElementById('qrisError').style.display = 'block';
+    } finally {
+      document.getElementById('qrisLoading').style.display = 'none';
+    }
+  }
+
+  async function saveTransaction() {
+    const amount = parseInt(document.getElementById('fAmount').value);
+    const date = document.getElementById('fDate').value;
+    const desc = document.getElementById('fDesc').value.trim();
+    const catId = document.getElementById('fCategory').value;
+    if (!amount || amount <= 0) { showSnack('⚠️ Masukkan nominal'); return; }
+    if (!date) { showSnack('⚠️ Pilih tanggal'); return; }
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    const { error } = await supabase.from('kk_transactions').insert({ type: activeType, amount, category_id: catId || null, description: desc || null, date });
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error) { showSnack('❌ ' + error.message); return; }
+    closeModal();
+    showSnack('✅ Transaksi disimpan!');
+    loadData();
+  }
+
+  function showSnack(msg) {
+    const el = document.getElementById('snackbar');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
